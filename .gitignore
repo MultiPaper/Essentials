@@ -5,6 +5,7 @@
 .idea/*
 *.iml
 .DS_Store
+*.sh
 
 # Checkstyle-IDEA config
 !.idea/checkstyle-idea.xml
