@@ -41,6 +41,7 @@ import com.earth2me.essentials.textreader.SimpleTextInput;
 import com.earth2me.essentials.updatecheck.UpdateChecker;
 import com.earth2me.essentials.utils.FormatUtil;
 import com.earth2me.essentials.utils.VersionUtil;
+import com.github.puregero.essentials.sync.MultiServerSynchronizer;
 import io.papermc.lib.PaperLib;
 import net.ess3.api.Economy;
 import net.ess3.api.IEssentials;
@@ -251,6 +252,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
             execTimer.mark("I18n1");
 
             Console.setInstance(this);
+            MultiServerSynchronizer.init(this);
 
             switch (VersionUtil.getServerSupportStatus()) {
                 case NMS_CLEANROOM:

@@ -27,6 +27,8 @@ dependencies {
     api(project(':providers:1_12Provider')) {
         exclude group: "org.bukkit", module: "bukkit"
     }
+
+    implementation 'com.github.puregero:multilib:1.1.1'
 }
 
 shadowJar {
@@ -39,6 +41,7 @@ shadowJar {
         include (dependency('org.yaml:snakeyaml'))
         include (dependency('io.leangen.geantyref:geantyref'))
         include (dependency('org.checkerframework:checker-qual'))
+        include (dependency('com.github.puregero:multilib'))
         include (project(':providers:BaseProviders'))
         include (project(':providers:PaperProvider'))
         include (project(':providers:NMSReflectionProvider'))
@@ -51,6 +54,7 @@ shadowJar {
     relocate 'org.yaml.snakeyaml', 'com.earth2me.essentials.libs.snakeyaml'
     relocate 'io.leangen.geantyref', 'com.earth2me.essentials.libs.geantyref'
     relocate 'org.checkerframework', 'com.earth2me.essentials.libs.checkerframework'
+    relocate 'com.github.puregero.multilib', 'com.earth2me.essentials.libs.multilib'
 
     minimize {
         include(dependency('org.checkerframework:checker-qual'))

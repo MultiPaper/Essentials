@@ -11,6 +11,8 @@ import com.earth2me.essentials.utils.FormatUtil;
 import com.earth2me.essentials.utils.NumberUtil;
 import com.earth2me.essentials.utils.TriState;
 import com.earth2me.essentials.utils.VersionUtil;
+import com.github.puregero.essentials.sync.RemoveTpaRequestSynchronizer;
+import com.github.puregero.essentials.sync.RequestTeleportSynchronizer;
 import com.google.common.collect.Lists;
 import net.ess3.api.IEssentials;
 import net.ess3.api.MaxMoneyException;
@@ -55,6 +57,8 @@ import static com.earth2me.essentials.I18n.tl;
 public class User extends UserData implements Comparable<User>, IMessageRecipient, net.ess3.api.IUser {
     private static final Statistic PLAY_ONE_TICK = EnumUtil.getStatistic("PLAY_ONE_MINUTE", "PLAY_ONE_TICK");
     private static final Logger logger = Logger.getLogger("Essentials");
+    public static RequestTeleportSynchronizer requestTeleportSynchronizer;
+    public static RemoveTpaRequestSynchronizer removeTpaRequestSynchronizer;
 
     // User modules
     private final IMessageRecipient messageRecipient;
@@ -342,6 +346,8 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
     @Override
     public void requestTeleport(final User player, final boolean here) {
+        requestTeleportSynchronizer.notify(this, player, here);
+
         final TpaRequest request = teleportRequestQueue.getOrDefault(player.getName(), new TpaRequest(player.getName(), player.getUUID()));
         request.setTime(System.currentTimeMillis());
         request.setHere(here);
@@ -396,6 +402,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     }
 
     public TpaRequest removeTpaRequest(String playerUsername) {
+        removeTpaRequestSynchronizer.notify(this, playerUsername);
         return teleportRequestQueue.remove(playerUsername);
     }
 

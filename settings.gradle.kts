@@ -21,6 +21,9 @@ dependencyResolutionManagement {
             content { includeGroup("net.kyori") }
             content { includeGroup("org.apache.logging.log4j") }
         }
+        maven("https://repo.clojars.org/") {
+            content { includeGroup("com.github.puregero") }
+        }
     }
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 }
