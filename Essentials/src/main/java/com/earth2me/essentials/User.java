@@ -13,6 +13,7 @@ import com.earth2me.essentials.utils.TriState;
 import com.earth2me.essentials.utils.VersionUtil;
 import com.github.puregero.essentials.sync.RemoveTpaRequestSynchronizer;
 import com.github.puregero.essentials.sync.RequestTeleportSynchronizer;
+import com.github.puregero.multilib.MultiLib;
 import com.google.common.collect.Lists;
 import net.ess3.api.IEssentials;
 import net.ess3.api.MaxMoneyException;
@@ -813,6 +814,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
         final long autoafkkick = ess.getSettings().getAutoAfkKick();
         if (autoafkkick > 0
+                && MultiLib.isLocalPlayer(this.getBase())
                 && lastActivity > 0 && (lastActivity + (autoafkkick * 1000)) < System.currentTimeMillis()
                 && !isAuthorized("essentials.kick.exempt")
                 && !isAuthorized("essentials.afk.kickexempt")) {
