@@ -95,7 +95,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     private long lastNotifiedAboutMailsMs;
     private String lastHomeConfirmation;
     private long lastHomeConfirmationTimestamp;
-    private boolean toggleShout = false;
+    private Boolean toggleShout;
     private transient final List<String> signCopy = Lists.newArrayList("", "", "", "");
 
     public User(final Player base, final IEssentials ess) {
@@ -113,6 +113,10 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
     void update(final Player base) {
         setBase(base);
+    }
+
+    public IEssentials getEssentials() {
+        return ess;
     }
 
     @Override
@@ -324,7 +328,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
             if (isAuthorized("essentials.itemspawn.item-all") || isAuthorized("essentials.itemspawn.item-" + name))
                 return true;
 
-            if (VersionUtil.getServerBukkitVersion().isLowerThan(VersionUtil.v1_13_0_R01)) {
+            if (VersionUtil.PRE_FLATTENING) {
                 final int id = material.getId();
                 if (isAuthorized("essentials.itemspawn.item-" + id)) return true;
             }
@@ -1207,10 +1211,16 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     @Override
     public void setToggleShout(boolean toggleShout) {
         this.toggleShout = toggleShout;
+        if (ess.getSettings().isPersistShout()) {
+            setShouting(toggleShout);
+        }
     }
 
     @Override
     public boolean isToggleShout() {
-        return toggleShout;
+        if (ess.getSettings().isPersistShout()) {
+            return toggleShout = isShouting();
+        }
+        return toggleShout == null ? toggleShout = ess.getSettings().isShoutDefault() : toggleShout;
     }
 }
