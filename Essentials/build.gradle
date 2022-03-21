@@ -28,7 +28,7 @@ dependencies {
         exclude group: "org.bukkit", module: "bukkit"
     }
 
-    implementation 'com.github.puregero:multilib:1.1.1'
+    implementation 'com.github.puregero:multilib:1.1.2-SNAPSHOT'
 }
 
 shadowJar {
