@@ -543,6 +543,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
 
     public void setLastLogout(final long time) {
         holder.timestamps().logout(time);
+        User.logoutTimeSynchronizer.notify((User) this, time);
         config.save();
     }
 
