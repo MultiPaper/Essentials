@@ -192,6 +192,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
         //Invalid names will corrupt the yaml
         name = StringUtil.safeString(name);
         holder.homes().put(name, LazyLocation.fromLocation(loc));
+        User.homeLocationSynchronizer.notify((User) this, name, LazyLocation.fromLocation(loc));
         config.save();
     }
 
@@ -202,6 +203,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
         }
         if (holder.homes().containsKey(search)) {
             holder.homes().remove(search);
+            User.homeLocationSynchronizer.notify((User) this, name, null);
             config.save();
         } else {
             throw new Exception(tl("invalidHome", search));
