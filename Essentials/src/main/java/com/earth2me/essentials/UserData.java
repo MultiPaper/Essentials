@@ -296,6 +296,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
             return;
         }
         holder.logoutLocation(loc);
+        User.logoutLocationSynchronizer.notify((User) this, LazyLocation.fromLocation(loc));
         config.save();
     }
 

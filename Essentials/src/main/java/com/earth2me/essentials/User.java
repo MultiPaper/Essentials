@@ -12,6 +12,7 @@ import com.earth2me.essentials.utils.NumberUtil;
 import com.earth2me.essentials.utils.TriState;
 import com.earth2me.essentials.utils.VersionUtil;
 import com.github.puregero.essentials.sync.LastLocationSynchronizer;
+import com.github.puregero.essentials.sync.LogoutLocationSynchronizer;
 import com.github.puregero.essentials.sync.RemoveTpaRequestSynchronizer;
 import com.github.puregero.essentials.sync.RequestTeleportSynchronizer;
 import com.github.puregero.multilib.MultiLib;
@@ -62,6 +63,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     public static RequestTeleportSynchronizer requestTeleportSynchronizer;
     public static RemoveTpaRequestSynchronizer removeTpaRequestSynchronizer;
     public static LastLocationSynchronizer lastLocationSynchronizer;
+    public static LogoutLocationSynchronizer logoutLocationSynchronizer;
 
     // User modules
     private final IMessageRecipient messageRecipient;

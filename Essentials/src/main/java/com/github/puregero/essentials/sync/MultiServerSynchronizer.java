@@ -44,6 +44,7 @@ public class MultiServerSynchronizer<T> {
         User.requestTeleportSynchronizer = new RequestTeleportSynchronizer(plugin);
         User.removeTpaRequestSynchronizer = new RemoveTpaRequestSynchronizer(plugin);
         User.lastLocationSynchronizer = new LastLocationSynchronizer(plugin);
+        User.logoutLocationSynchronizer = new LogoutLocationSynchronizer(plugin);
     }
 
     public MultiServerSynchronizer(Plugin plugin, String channel) {
