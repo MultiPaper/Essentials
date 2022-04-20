@@ -534,6 +534,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
         if (base.getAddress() != null && base.getAddress().getAddress() != null) {
             holder.ipAddress(base.getAddress().getAddress().getHostAddress());
         }
+        User.loginTimeSynchronizer.notify((User) this, time);
         config.save();
     }
 
