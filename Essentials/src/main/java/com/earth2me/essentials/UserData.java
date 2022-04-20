@@ -282,6 +282,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
             return;
         }
         holder.lastLocation(loc);
+        User.lastLocationSynchronizer.notify((User) this, LazyLocation.fromLocation(loc));
         config.save();
     }
 
