@@ -55,7 +55,6 @@ import static com.earth2me.essentials.I18n.tl;
 
 public class User extends UserData implements Comparable<User>, IMessageRecipient, net.ess3.api.IUser {
     private static final Statistic PLAY_ONE_TICK = EnumUtil.getStatistic("PLAY_ONE_MINUTE", "PLAY_ONE_TICK");
-    private static final Logger logger = Logger.getLogger("Essentials");
     public static RequestTeleportSynchronizer requestTeleportSynchronizer;
     public static RemoveTpaRequestSynchronizer removeTpaRequestSynchronizer;
     public static LastLocationSynchronizer lastLocationSynchronizer;
