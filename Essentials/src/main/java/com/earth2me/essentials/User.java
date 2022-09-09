@@ -50,7 +50,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.earth2me.essentials.I18n.tl;
 
@@ -79,6 +78,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     // User properties
     private transient boolean vanished;
     private boolean hidden = false;
+    private boolean leavingHidden = false;
     private boolean rightClickJump = false;
     private boolean invSee = false;
     private boolean recipeSee = false;
@@ -101,6 +101,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     private long lastHomeConfirmationTimestamp;
     private Boolean toggleShout;
     private transient final List<String> signCopy = Lists.newArrayList("", "", "", "");
+    private transient long lastVanishTime = System.currentTimeMillis();
 
     public User(final Player base, final IEssentials ess) {
         super(base, ess);
@@ -531,7 +532,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
                     this.getBase().setPlayerListName(name);
                 } catch (final IllegalArgumentException e) {
                     if (ess.getSettings().isDebug()) {
-                        logger.log(Level.INFO, "Playerlist for " + name + " was not updated. Name clashed with another online player.");
+                        ess.getLogger().log(Level.INFO, "Playerlist for " + name + " was not updated. Name clashed with another online player.");
                     }
                 }
             }
@@ -649,7 +650,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
             return;
         }
 
-        this.getBase().setSleepingIgnored(this.isAuthorized("essentials.sleepingignored") || set && ess.getSettings().sleepIgnoresAfkPlayers());
+        this.getBase().setSleepingIgnored(this.isAuthorized("essentials.sleepingignored") || (set && ess.getSettings().sleepIgnoresAfkPlayers()));
         if (set && !isAfk()) {
             afkPosition = this.getLocation();
             this.afkSince = System.currentTimeMillis();
@@ -692,6 +693,16 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     @Override
     public boolean isHidden() {
         return hidden;
+    }
+
+    @Override
+    public boolean isLeavingHidden() {
+        return leavingHidden;
+    }
+
+    @Override
+    public void setLeavingHidden(boolean leavingHidden) {
+        this.leavingHidden = leavingHidden;
     }
 
     @Override
@@ -977,6 +988,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
                 }
             }
             setHidden(true);
+            lastVanishTime = System.currentTimeMillis();
             ess.getVanishedPlayersNew().add(getName());
             this.getBase().setMetadata("vanished", new FixedMetadataValue(ess, true));
             if (isAuthorized("essentials.vanish.effect")) {
@@ -1201,6 +1213,10 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
             return exempt;
         }
         return isBaltopExcludeCache();
+    }
+
+    public long getLastVanishTime() {
+        return lastVanishTime;
     }
 
     @Override
