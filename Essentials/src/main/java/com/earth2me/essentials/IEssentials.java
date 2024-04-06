@@ -7,13 +7,17 @@ import com.earth2me.essentials.commands.IEssentialsCommand;
 import com.earth2me.essentials.commands.PlayerNotFoundException;
 import com.earth2me.essentials.perm.PermissionsHandler;
 import com.earth2me.essentials.updatecheck.UpdateChecker;
+import com.earth2me.essentials.userstorage.IUserMap;
 import net.ess3.nms.refl.providers.ReflOnlineModeProvider;
+import net.ess3.provider.BiomeKeyProvider;
 import net.ess3.provider.ContainerProvider;
+import net.ess3.provider.DamageEventProvider;
 import net.ess3.provider.FormattedCommandAliasProvider;
 import net.ess3.provider.ItemUnbreakableProvider;
 import net.ess3.provider.KnownCommandsProvider;
 import net.ess3.provider.MaterialTagProvider;
 import net.ess3.provider.PersistentDataProvider;
+import net.ess3.provider.PlayerLocaleProvider;
 import net.ess3.provider.SerializationProvider;
 import net.ess3.provider.ServerStateProvider;
 import net.ess3.provider.SignDataProvider;
@@ -79,6 +83,16 @@ public interface IEssentials extends Plugin {
 
     int broadcastMessage(String permission, String message);
 
+    void broadcastTl(String tlKey, Object... args);
+
+    void broadcastTl(IUser sender, String tlKey, Object... args);
+
+    void broadcastTl(IUser sender, String permission, String tlKey, Object... args);
+
+    void broadcastTl(IUser sender, Predicate<IUser> shouldExclude, String tlKey, Object... args);
+
+    void broadcastTl(IUser sender, Predicate<IUser> shouldExclude, boolean parseKeywords, String tlKey, Object... args);
+
     ISettings getSettings();
 
     BukkitScheduler getScheduler();
@@ -109,8 +123,6 @@ public interface IEssentials extends Plugin {
 
     int scheduleSyncRepeatingTask(Runnable run, long delay, long period);
 
-    TNTExplodeListener getTNTListener();
-
     PermissionsHandler getPermissionsHandler();
 
     AlternativeCommandsHandler getAlternativeCommandsHandler();
@@ -119,6 +131,9 @@ public interface IEssentials extends Plugin {
 
     IItemDb getItemDb();
 
+    IUserMap getUsers();
+
+    @Deprecated
     UserMap getUserMap();
 
     BalanceTop getBalanceTop();
@@ -167,6 +182,12 @@ public interface IEssentials extends Plugin {
     WorldInfoProvider getWorldInfoProvider();
 
     SignDataProvider getSignDataProvider();
+
+    PlayerLocaleProvider getPlayerLocaleProvider();
+
+    DamageEventProvider getDamageEventProvider();
+
+    BiomeKeyProvider getBiomeKeyProvider();
 
     PluginCommand getPluginCommand(String cmd);
 }

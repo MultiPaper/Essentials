@@ -3,9 +3,11 @@ package com.earth2me.essentials.commands;
 import com.earth2me.essentials.CommandSource;
 import com.earth2me.essentials.EssentialsUpgrade;
 import com.earth2me.essentials.User;
-import com.earth2me.essentials.UserMap;
+import com.earth2me.essentials.craftbukkit.Inventories;
 import com.earth2me.essentials.economy.EconomyLayer;
 import com.earth2me.essentials.economy.EconomyLayers;
+import com.earth2me.essentials.userstorage.ModernUserMap;
+import com.earth2me.essentials.utils.AdventureUtil;
 import com.earth2me.essentials.utils.CommandMapUtil;
 import com.earth2me.essentials.utils.DateUtil;
 import com.earth2me.essentials.utils.EnumUtil;
@@ -13,26 +15,30 @@ import com.earth2me.essentials.utils.FloatUtil;
 import com.earth2me.essentials.utils.NumberUtil;
 import com.earth2me.essentials.utils.PasteUtil;
 import com.earth2me.essentials.utils.VersionUtil;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import net.ess3.api.TranslatableException;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
@@ -45,15 +51,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static com.earth2me.essentials.I18n.tl;
+import static com.earth2me.essentials.I18n.tlLiteral;
 
 // This command has 4 undocumented behaviours #EasterEgg
 public class Commandessentials extends EssentialsCommand {
@@ -90,6 +99,7 @@ public class Commandessentials extends EssentialsCommand {
         "EssentialsAntiBuild",
         "EssentialsChat",
         "EssentialsDiscord",
+        "EssentialsDiscordLink",
         "EssentialsGeoIP",
         "EssentialsProtect",
         "EssentialsSpawn",
@@ -147,11 +157,12 @@ public class Commandessentials extends EssentialsCommand {
             case "homes":
                 runHomes(server, sender, commandLabel, args);
                 break;
-            case "uuidconvert":
-                runUUIDConvert(server, sender, commandLabel, args);
+            case "usermap":
+                runUserMap(sender, args);
                 break;
-            case "uuidtest":
-                runUUIDTest(server, sender, commandLabel, args);
+
+            case "itemtest":
+                runItemTest(server, sender, commandLabel, args);
                 break;
 
             // "#EasterEgg"
@@ -168,6 +179,56 @@ public class Commandessentials extends EssentialsCommand {
         }
     }
 
+    public void runItemTest(Server server, CommandSource sender, String commandLabel, String[] args) {
+        if (!sender.isAuthorized("essentials.itemtest") || args.length < 2 || !sender.isPlayer()) {
+            return;
+        }
+
+        final Player player = sender.getPlayer();
+        assert player != null;
+
+        switch (args[1]) {
+            case "slot": {
+                if (args.length < 3) {
+                    return;
+                }
+                player.getInventory().setItem(Integer.parseInt(args[2]), new ItemStack(Material.DIRT));
+                break;
+            }
+            case "overfill": {
+                sender.sendMessage(Inventories.addItem(player, 42, false, new ItemStack(Material.DIAMOND_SWORD, 1), new ItemStack(Material.DIRT, 32), new ItemStack(Material.DIRT, 32)).toString());
+                break;
+            }
+            case "overfill2": {
+                if (args.length < 4) {
+                    return;
+                }
+                final boolean armor = Boolean.parseBoolean(args[2]);
+                final boolean add = Boolean.parseBoolean(args[3]);
+                final ItemStack[] items = new ItemStack[]{new ItemStack(Material.DIAMOND_SWORD, 1), new ItemStack(Material.DIRT, 32), new ItemStack(Material.DIRT, 32), new ItemStack(Material.DIAMOND_HELMET, 4), new ItemStack(Material.CHAINMAIL_LEGGINGS, 1)};
+                if (Inventories.hasSpace(player, 0, armor, items)) {
+                    if (add) {
+                        sender.sendMessage(Inventories.addItem(player, 0, armor, items).toString());
+                    }
+                    sender.sendMessage("SO MUCH SPACE!");
+                } else {
+                    sender.sendMessage("No space!");
+                }
+                break;
+            }
+            case "remove": {
+                if (args.length < 3) {
+                    return;
+                }
+                Inventories.removeItemExact(player, new ItemStack(Material.PUMPKIN, 1), Boolean.parseBoolean(args[2]));
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+
     // Displays the command's usage.
     private void showUsage(final CommandSource sender) throws Exception {
         throw new NotEnoughArgumentsException();
@@ -176,11 +237,11 @@ public class Commandessentials extends EssentialsCommand {
     // Lists commands that are being handed over to other plugins.
     private void runCommands(final Server server, final CommandSource sender, final String commandLabel, final String[] args) {
         if (ess.getAlternativeCommandsHandler().disabledCommands().size() == 0) {
-            sender.sendMessage(tl("blockListEmpty"));
+            sender.sendTl("blockListEmpty");
             return;
         }
 
-        sender.sendMessage(tl("blockList"));
+        sender.sendTl("blockList");
         for (final Map.Entry<String, String> entry : ess.getAlternativeCommandsHandler().disabledCommands().entrySet()) {
             sender.sendMessage(entry.getKey() + " => " + entry.getValue());
         }
@@ -188,7 +249,7 @@ public class Commandessentials extends EssentialsCommand {
 
     // Generates a paste of useful information
     private void runDump(Server server, CommandSource sender, String commandLabel, String[] args) {
-        sender.sendMessage(tl("dumpCreating"));
+        sender.sendTl("dumpCreating");
 
         final JsonObject dump = new JsonObject();
 
@@ -270,6 +331,7 @@ public class Commandessentials extends EssentialsCommand {
         files.add(new PasteUtil.PasteFile("dump.json", dump.toString()));
 
         final Plugin essDiscord = Bukkit.getPluginManager().getPlugin("EssentialsDiscord");
+        final Plugin essDiscordLink = Bukkit.getPluginManager().getPlugin("EssentialsDiscordLink");
         final Plugin essSpawn = Bukkit.getPluginManager().getPlugin("EssentialsSpawn");
 
         final Map<String, Command> knownCommandsCopy = new HashMap<>(ess.getKnownCommandsProvider().getKnownCommands());
@@ -319,7 +381,7 @@ public class Commandessentials extends EssentialsCommand {
                 try {
                     files.add(new PasteUtil.PasteFile("config.yml", new String(Files.readAllBytes(ess.getSettings().getConfigFile().toPath()), StandardCharsets.UTF_8)));
                 } catch (IOException e) {
-                    sender.sendMessage(tl("dumpErrorUpload", "config.yml", e.getMessage()));
+                    sender.sendTl("dumpErrorUpload", "config.yml", e.getMessage());
                 }
             }
 
@@ -329,7 +391,16 @@ public class Commandessentials extends EssentialsCommand {
                             new String(Files.readAllBytes(essDiscord.getDataFolder().toPath().resolve("config.yml")), StandardCharsets.UTF_8)
                                     .replaceAll("[A-Za-z\\d]{24}\\.[\\w-]{6}\\.[\\w-]{27}", "<censored token>")));
                 } catch (IOException e) {
-                    sender.sendMessage(tl("dumpErrorUpload", "discord-config.yml", e.getMessage()));
+                    sender.sendTl("dumpErrorUpload", "discord-config.yml", e.getMessage());
+                }
+
+                if (essDiscordLink != null) {
+                    try {
+                        files.add(new PasteUtil.PasteFile("discord-link-config.yml",
+                                new String(Files.readAllBytes(essDiscordLink.getDataFolder().toPath().resolve("config.yml")), StandardCharsets.UTF_8)));
+                    } catch (IOException e) {
+                        sender.sendTl("dumpErrorUpload", "discord-link-config.yml", e.getMessage());
+                    }
                 }
             }
 
@@ -337,7 +408,7 @@ public class Commandessentials extends EssentialsCommand {
                 try {
                     files.add(new PasteUtil.PasteFile("kits.yml", new String(Files.readAllBytes(ess.getKits().getFile().toPath()), StandardCharsets.UTF_8)));
                 } catch (IOException e) {
-                    sender.sendMessage(tl("dumpErrorUpload", "kits.yml", e.getMessage()));
+                    sender.sendTl("dumpErrorUpload", "kits.yml", e.getMessage());
                 }
             }
 
@@ -347,7 +418,7 @@ public class Commandessentials extends EssentialsCommand {
                             .replaceAll("(?m)^\\[\\d\\d:\\d\\d:\\d\\d] \\[.+/(?:DEBUG|TRACE)]: .+\\s(?:[A-Za-z.]+:.+\\s(?:\\t.+\\s)*)?\\s*(?:\"[A-Za-z]+\" : .+[\\s}\\]]+)*", "")
                             .replaceAll("(?:[0-9]{1,3}\\.){3}[0-9]{1,3}", "<censored ip address>")));
                 } catch (IOException e) {
-                    sender.sendMessage(tl("dumpErrorUpload", "latest.log", e.getMessage()));
+                    sender.sendTl("dumpErrorUpload", "latest.log", e.getMessage());
                 }
             }
 
@@ -355,7 +426,7 @@ public class Commandessentials extends EssentialsCommand {
                 try {
                     files.add(new PasteUtil.PasteFile("worth.yml", new String(Files.readAllBytes(ess.getWorth().getFile().toPath()), StandardCharsets.UTF_8)));
                 } catch (IOException e) {
-                    sender.sendMessage(tl("dumpErrorUpload", "worth.yml", e.getMessage()));
+                    sender.sendTl("dumpErrorUpload", "worth.yml", e.getMessage());
                 }
             }
 
@@ -363,7 +434,7 @@ public class Commandessentials extends EssentialsCommand {
                 try {
                     files.add(new PasteUtil.PasteFile("tpr.yml", new String(Files.readAllBytes(ess.getRandomTeleport().getFile().toPath()), StandardCharsets.UTF_8)));
                 } catch (IOException e) {
-                    sender.sendMessage(tl("dumpErrorUpload", "tpr.yml", e.getMessage()));
+                    sender.sendTl("dumpErrorUpload", "tpr.yml", e.getMessage());
                 }
             }
 
@@ -371,7 +442,7 @@ public class Commandessentials extends EssentialsCommand {
                 try {
                     files.add(new PasteUtil.PasteFile("spawn.yml", new String(Files.readAllBytes(ess.getDataFolder().toPath().resolve("spawn.yml")), StandardCharsets.UTF_8)));
                 } catch (IOException e) {
-                    sender.sendMessage(tl("dumpErrorUpload", "spawn.yml", e.getMessage()));
+                    sender.sendTl("dumpErrorUpload", "spawn.yml", e.getMessage());
                 }
             }
 
@@ -381,7 +452,7 @@ public class Commandessentials extends EssentialsCommand {
                     files.add(new PasteUtil.PasteFile("commandmap.json", CommandMapUtil.toJsonPretty(ess, knownCommandsCopy)));
                     files.add(new PasteUtil.PasteFile("commandoverride.json", disabledCommandsCopy.toString()));
                 } catch (IOException e) {
-                    sender.sendMessage(tl("dumpErrorUpload", "commands.yml", e.getMessage()));
+                    sender.sendTl("dumpErrorUpload", "commands.yml", e.getMessage());
                 }
             }
 
@@ -389,17 +460,17 @@ public class Commandessentials extends EssentialsCommand {
             future.thenAccept(result -> {
                 if (result != null) {
                     final String dumpUrl = "https://essentialsx.net/dump.html?id=" + result.getPasteId();
-                    sender.sendMessage(tl("dumpUrl", dumpUrl));
-                    sender.sendMessage(tl("dumpDeleteKey", result.getDeletionKey()));
+                    sender.sendTl("dumpUrl", dumpUrl);
+                    sender.sendTl("dumpDeleteKey", result.getDeletionKey());
                     if (sender.isPlayer()) {
-                        ess.getLogger().info(tl("dumpConsoleUrl", dumpUrl));
-                        ess.getLogger().info(tl("dumpDeleteKey", result.getDeletionKey()));
+                        ess.getLogger().info(AdventureUtil.miniToLegacy(tlLiteral("dumpConsoleUrl", dumpUrl)));
+                        ess.getLogger().info(AdventureUtil.miniToLegacy(tlLiteral("dumpDeleteKey", result.getDeletionKey())));
                     }
                 }
                 files.clear();
             });
             future.exceptionally(throwable -> {
-                sender.sendMessage(tl("dumpError", throwable.getMessage()));
+                sender.sendTl("dumpError", throwable.getMessage());
                 return null;
             });
         });
@@ -424,7 +495,7 @@ public class Commandessentials extends EssentialsCommand {
     // Reloads all reloadable configs.
     private void runReload(final Server server, final CommandSource sender, final String commandLabel, final String[] args) throws Exception {
         ess.reload();
-        sender.sendMessage(tl("essentialsReload", ess.getDescription().getVersion()));
+        sender.sendTl("essentialsReload", ess.getDescription().getVersion());
     }
 
     // Pop tarts.
@@ -468,17 +539,16 @@ public class Commandessentials extends EssentialsCommand {
             throw new Exception("/<command> cleanup <days> [money] [homes]");
         }
 
-        sender.sendMessage(tl("cleaning"));
+        sender.sendTl("cleaning");
 
         final long daysArg = Long.parseLong(args[1]);
-        final double moneyArg = args.length >= 3 ? FloatUtil.parseDouble(args[2].replaceAll("[^0-9\\.]", "")) : 0;
+        final double moneyArg = args.length >= 3 ? FloatUtil.parseDouble(args[2].replaceAll("[^0-9.]", "")) : 0;
         final int homesArg = args.length >= 4 && NumberUtil.isInt(args[3]) ? Integer.parseInt(args[3]) : 0;
-        final UserMap userMap = ess.getUserMap();
 
         ess.runTaskAsynchronously(() -> {
             final long currTime = System.currentTimeMillis();
-            for (final UUID u : userMap.getAllUniqueUsers()) {
-                final User user = ess.getUserMap().getUser(u);
+            for (final UUID u : ess.getUsers().getAllUserUUIDs()) {
+                final User user = ess.getUsers().loadUncachedUser(u);
                 if (user == null) {
                     continue;
                 }
@@ -510,7 +580,7 @@ public class Commandessentials extends EssentialsCommand {
 
                 user.reset();
             }
-            sender.sendMessage(tl("cleaned"));
+            sender.sendTl("cleaned");
         });
     }
 
@@ -523,13 +593,12 @@ public class Commandessentials extends EssentialsCommand {
             throw new Exception(HOMES_USAGE);
         }
 
-        final UserMap userMap = ess.getUserMap();
         switch (args[1]) {
             case "fix":
-                sender.sendMessage(tl("fixingHomes"));
+                sender.sendTl("fixingHomes");
                 ess.runTaskAsynchronously(() -> {
-                    for (final UUID u : userMap.getAllUniqueUsers()) {
-                        final User user = ess.getUserMap().getUser(u);
+                    for (final UUID u : ess.getUsers().getAllUserUUIDs()) {
+                        final User user = ess.getUsers().loadUncachedUser(u);
                         if (user == null) {
                             continue;
                         }
@@ -543,18 +612,22 @@ public class Commandessentials extends EssentialsCommand {
                             }
                         }
                     }
-                    sender.sendMessage(tl("fixedHomes"));
+                    sender.sendTl("fixedHomes");
                 });
                 break;
             case "delete":
                 final boolean filterByWorld = args.length >= 3;
                 if (filterByWorld && server.getWorld(args[2]) == null) {
-                    throw new Exception(tl("invalidWorld"));
+                    throw new TranslatableException("invalidWorld");
                 }
-                sender.sendMessage(filterByWorld ? tl("deletingHomesWorld", args[2]) : tl("deletingHomes"));
+                if (filterByWorld) {
+                    sender.sendTl("deletingHomesWorld", args[2]);
+                } else {
+                    sender.sendTl("deletingHomes");
+                }
                 ess.runTaskAsynchronously(() -> {
-                    for (final UUID u : userMap.getAllUniqueUsers()) {
-                        final User user = ess.getUserMap().getUser(u);
+                    for (final UUID u : ess.getUsers().getAllUserUUIDs()) {
+                        final User user = ess.getUsers().loadUncachedUser(u);
                         if (user == null) {
                             continue;
                         }
@@ -569,7 +642,12 @@ public class Commandessentials extends EssentialsCommand {
                             }
                         }
                     }
-                    sender.sendMessage(filterByWorld ? tl("deletedHomesWorld", args[2]) : tl("deletedHomes"));
+
+                    if (filterByWorld) {
+                        sender.sendTl("deletedHomesWorld", args[2]);
+                    } else {
+                        sender.sendTl("deletedHomes");
+                    }
                 });
                 break;
             default:
@@ -577,52 +655,79 @@ public class Commandessentials extends EssentialsCommand {
         }
     }
 
-    // Forces a rerun of userdata UUID conversion.
-    private void runUUIDConvert(final Server server, final CommandSource sender, final String commandLabel, final String[] args) throws Exception {
-        sender.sendMessage("Starting Essentials UUID userdata conversion; this may lag the server.");
-
-        final Boolean ignoreUFCache = args.length > 2 && args[1].toLowerCase(Locale.ENGLISH).contains("ignore");
-        EssentialsUpgrade.uuidFileConvert(ess, ignoreUFCache);
-
-        sender.sendMessage("UUID conversion complete. Check your server log for more information.");
-    }
-
-    // Looks up various UUIDs for a user.
-    private void runUUIDTest(final Server server, final CommandSource sender, final String commandLabel, final String[] args) throws Exception {
-        if (args.length < 2) {
-            throw new Exception("/<command> uuidtest <name>");
+    // Gets information about cached users
+    private void runUserMap(final CommandSource sender, final String[] args) {
+        if (!sender.isAuthorized("essentials.usermap")) {
+            return;
         }
-        final String name = args[1];
-        sender.sendMessage("Looking up UUID for " + name);
 
-        UUID onlineUUID = null;
+        final ModernUserMap userMap = (ModernUserMap) ess.getUsers();
+        sender.sendTl("usermapSize", userMap.getCachedCount(), userMap.getUserCount(), ess.getSettings().getMaxUserCacheCount());
+        if (args.length > 1) {
+            if (args[1].equals("full")) {
+                for (final Map.Entry<String, UUID> entry : userMap.getNameCache().entrySet()) {
+                    sender.sendTl("usermapEntry", entry.getKey(), entry.getValue().toString());
+                }
+            } else if (args[1].equals("purge")) {
+                final boolean seppuku = args.length > 2 && args[2].equals("iknowwhatimdoing");
 
-        for (final Player player : ess.getOnlinePlayers()) {
-            if (player.getName().equalsIgnoreCase(name)) {
-                onlineUUID = player.getUniqueId();
-                break;
+                sender.sendTl("usermapPurge", String.valueOf(seppuku));
+
+                final Set<UUID> uuids = new HashSet<>(ess.getUsers().getAllUserUUIDs());
+                ess.runTaskAsynchronously(() -> {
+                    final File userdataFolder = new File(ess.getDataFolder(), "userdata");
+                    final File backupFolder = new File(ess.getDataFolder(), "userdata-npc-backup-boogaloo-" + System.currentTimeMillis());
+
+                    if (!userdataFolder.isDirectory()) {
+                        ess.getLogger().warning("Missing userdata folder, aborting usermap purge.");
+                        return;
+                    }
+
+                    if (seppuku && !backupFolder.mkdir()) {
+                        ess.getLogger().warning("Unable to create backup folder, aborting usermap purge.");
+                        return;
+                    }
+
+                    int total = 0;
+                    final File[] files = userdataFolder.listFiles(EssentialsUpgrade.YML_FILTER);
+                    if (files != null) {
+                        for (final File file : files) {
+                            try {
+                                final String fileName = file.getName();
+                                final UUID uuid = UUID.fromString(fileName.substring(0, fileName.length() - 4));
+                                if (!uuids.contains(uuid)) {
+                                    total++;
+                                    ess.getLogger().warning("Found orphaned userdata file: " + file.getName());
+                                    if (seppuku) {
+                                        try {
+                                            com.google.common.io.Files.move(file, new File(backupFolder, file.getName()));
+                                        } catch (IOException e) {
+                                            ess.getLogger().log(Level.WARNING, "Unable to move orphaned userdata file: " + file.getName(), e);
+                                        }
+                                    }
+                                }
+                            } catch (IllegalArgumentException ignored) {
+                            }
+                        }
+                    }
+                    ess.getLogger().info("Found " + total + " orphaned userdata files.");
+                });
+            } else if (args[1].equalsIgnoreCase("cache")) {
+                sender.sendTl("usermapKnown", ess.getUsers().getAllUserUUIDs().size(), ess.getUsers().getNameCache().size());
+            } else {
+                try {
+                    final UUID uuid = UUID.fromString(args[1]);
+                    for (final Map.Entry<String, UUID> entry : userMap.getNameCache().entrySet()) {
+                        if (entry.getValue().equals(uuid)) {
+                            sender.sendTl("usermapEntry", entry.getKey(), args[1]);
+                        }
+                    }
+                } catch (IllegalArgumentException ignored) {
+                    final String sanitizedName = userMap.getSanitizedName(args[1]);
+                    sender.sendTl("usermapEntry", sanitizedName, userMap.getNameCache().get(sanitizedName).toString());
+                }
             }
         }
-
-        final UUID essUUID = ess.getUserMap().getUser(name).getConfigUUID();
-
-        final org.bukkit.OfflinePlayer player = ess.getServer().getOfflinePlayer(name);
-        final UUID bukkituuid = player.getUniqueId();
-        sender.sendMessage("Bukkit Lookup: " + bukkituuid.toString());
-
-        if (onlineUUID != null && onlineUUID != bukkituuid) {
-            sender.sendMessage("Online player: " + onlineUUID.toString());
-        }
-
-        if (essUUID != null && essUUID != bukkituuid) {
-            sender.sendMessage("Essentials config: " + essUUID.toString());
-        }
-
-        final UUID npcuuid = UUID.nameUUIDFromBytes(("NPC:" + name).getBytes(Charsets.UTF_8));
-        sender.sendMessage("NPC UUID: " + npcuuid.toString());
-
-        final UUID offlineuuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8));
-        sender.sendMessage("Offline Mode UUID: " + offlineuuid.toString());
     }
 
     // Displays versions of EssentialsX and related plugins.
@@ -645,9 +750,9 @@ public class Commandessentials extends EssentialsCommand {
             serverMessageKey = "versionOutputWarn";
         }
 
-        sender.sendMessage(tl(serverMessageKey, "Server", server.getBukkitVersion() + " " + server.getVersion()));
-        sender.sendMessage(tl(serverMessageKey, "Brand", server.getName()));
-        sender.sendMessage(tl("versionOutputFine", "EssentialsX", essVer));
+        sender.sendTl(serverMessageKey, "Server", server.getBukkitVersion() + " " + server.getVersion());
+        sender.sendTl(serverMessageKey, "Brand", server.getName());
+        sender.sendTl("versionOutputFine", "EssentialsX", essVer);
 
         for (final Plugin plugin : pm.getPlugins()) {
             final PluginDescriptionFile desc = plugin.getDescription();
@@ -660,22 +765,22 @@ public class Commandessentials extends EssentialsCommand {
 
                     if (!version.equalsIgnoreCase(essVer)) {
                         isMismatched = true;
-                        sender.sendMessage(tl("versionOutputWarn", name, version));
+                        sender.sendTl("versionOutputWarn", name, version);
                     } else {
-                        sender.sendMessage(tl("versionOutputFine", name, version));
+                        sender.sendTl("versionOutputFine", name, version);
                     }
                 } else {
-                    sender.sendMessage(tl("versionOutputUnsupported", name, version));
+                    sender.sendTl("versionOutputUnsupported", name, version);
                     isUnsupported = true;
                 }
             }
 
             if (versionPlugins.contains(name)) {
                 if (warnPlugins.contains(name)) {
-                    sender.sendMessage(tl("versionOutputUnsupported", name, version));
+                    sender.sendTl("versionOutputUnsupported", name, version);
                     isUnsupported = true;
                 } else {
-                    sender.sendMessage(tl("versionOutputFine", name, version));
+                    sender.sendTl("versionOutputFine", name, version);
                 }
             }
 
@@ -691,48 +796,48 @@ public class Commandessentials extends EssentialsCommand {
         } else {
             layer = "None";
         }
-        sender.sendMessage(tl("versionOutputEconLayer", layer));
+        sender.sendTl("versionOutputEconLayer", layer);
 
         if (isMismatched) {
-            sender.sendMessage(tl("versionMismatchAll"));
+            sender.sendTl("versionMismatchAll");
         }
 
         if (!isVaultInstalled) {
-            sender.sendMessage(tl("versionOutputVaultMissing"));
+            sender.sendTl("versionOutputVaultMissing");
         }
 
         if (isUnsupported) {
-            sender.sendMessage(tl("versionOutputUnsupportedPlugins"));
+            sender.sendTl("versionOutputUnsupportedPlugins");
         }
 
         switch (supportStatus) {
             case NMS_CLEANROOM:
-                sender.sendMessage(ChatColor.DARK_RED + tl("serverUnsupportedCleanroom"));
+                sender.sendComponent(sender.tlComponent("serverUnsupportedCleanroom").color(NamedTextColor.DARK_RED));
                 break;
             case DANGEROUS_FORK:
-                sender.sendMessage(ChatColor.DARK_RED + tl("serverUnsupportedDangerous"));
+                sender.sendComponent(sender.tlComponent("serverUnsupportedDangerous").color(NamedTextColor.DARK_RED));
                 break;
             case STUPID_PLUGIN:
-                sender.sendMessage(ChatColor.DARK_RED + tl("serverUnsupportedDumbPlugins"));
+                sender.sendComponent(sender.tlComponent("serverUnsupportedDumbPlugins").color(NamedTextColor.DARK_RED));
                 break;
             case UNSTABLE:
-                sender.sendMessage(ChatColor.DARK_RED + tl("serverUnsupportedMods"));
+                sender.sendComponent(sender.tlComponent("serverUnsupportedMods").color(NamedTextColor.DARK_RED));
                 break;
             case OUTDATED:
-                sender.sendMessage(ChatColor.RED + tl("serverUnsupported"));
+                sender.sendComponent(sender.tlComponent("serverUnsupported").color(NamedTextColor.RED));
                 break;
             case LIMITED:
-                sender.sendMessage(ChatColor.RED + tl("serverUnsupportedLimitedApi"));
+                sender.sendComponent(sender.tlComponent("serverUnsupportedLimitedApi").color(NamedTextColor.RED));
                 break;
         }
         if (VersionUtil.getSupportStatusClass() != null) {
-            sender.sendMessage(ChatColor.RED + tl("serverUnsupportedClass", VersionUtil.getSupportStatusClass()));
+            sender.sendComponent(sender.tlComponent("serverUnsupportedClass").color(NamedTextColor.RED));
         }
 
-        sender.sendMessage(tl("versionFetching"));
+        sender.sendTl("versionFetching");
         ess.runTaskAsynchronously(() -> {
-            for (String str : ess.getUpdateChecker().getVersionMessages(true, true)) {
-                sender.sendMessage(str);
+            for (final Component component : ess.getUpdateChecker().getVersionMessages(true, true, sender)) {
+                sender.sendComponent(component);
             }
         });
     }
@@ -750,7 +855,6 @@ public class Commandessentials extends EssentialsCommand {
             options.add("cleanup");
             options.add("homes");
             //options.add("uuidconvert");
-            //options.add("uuidtest");
             //options.add("nya");
             //options.add("moo");
             return options;
@@ -763,7 +867,6 @@ public class Commandessentials extends EssentialsCommand {
                 }
                 break;
             case "reset":
-            case "uuidtest":
                 if (args.length == 2) {
                     return getPlayers(server, sender);
                 }
@@ -780,11 +883,6 @@ public class Commandessentials extends EssentialsCommand {
                     return Lists.newArrayList("fix", "delete");
                 } else if (args.length == 3 && args[1].equalsIgnoreCase("delete")) {
                     return server.getWorlds().stream().map(World::getName).collect(Collectors.toList());
-                }
-                break;
-            case "uuidconvert":
-                if (args.length == 2) {
-                    return Lists.newArrayList("ignoreUFCache");
                 }
                 break;
             case "dump":

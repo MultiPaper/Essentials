@@ -2,6 +2,7 @@ package com.earth2me.essentials.items;
 
 import com.earth2me.essentials.IConf;
 import com.earth2me.essentials.User;
+import com.earth2me.essentials.craftbukkit.Inventories;
 import com.earth2me.essentials.utils.FormatUtil;
 import com.earth2me.essentials.utils.MaterialUtil;
 import com.earth2me.essentials.utils.VersionUtil;
@@ -37,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-
-import static com.earth2me.essentials.I18n.tl;
 
 public abstract class AbstractItemDb implements IConf, net.ess3.api.IItemDb {
 
@@ -156,14 +155,14 @@ public abstract class AbstractItemDb implements IConf, net.ess3.api.IItemDb {
         } else if (args[0].equalsIgnoreCase("hand")) {
             is.add(user.getItemInHand().clone());
         } else if (args[0].equalsIgnoreCase("inventory") || args[0].equalsIgnoreCase("invent") || args[0].equalsIgnoreCase("all")) {
-            for (final ItemStack stack : user.getBase().getInventory().getContents()) {
+            for (final ItemStack stack : Inventories.getInventory(user.getBase(), true)) {
                 if (stack == null || stack.getType() == Material.AIR) {
                     continue;
                 }
                 is.add(stack.clone());
             }
         } else if (args[0].equalsIgnoreCase("blocks")) {
-            for (final ItemStack stack : user.getBase().getInventory().getContents()) {
+            for (final ItemStack stack : Inventories.getInventory(user.getBase(), true)) {
                 if (stack == null || stack.getType() == Material.AIR || !stack.getType().isBlock()) {
                     continue;
                 }
@@ -174,7 +173,7 @@ public abstract class AbstractItemDb implements IConf, net.ess3.api.IItemDb {
         }
 
         if (is.isEmpty() || is.get(0).getType() == Material.AIR) {
-            throw new Exception(tl("itemSellAir"));
+            throw new Exception(user.playerTl("itemSellAir"));
         }
 
         return is;
@@ -211,6 +210,12 @@ public abstract class AbstractItemDb implements IConf, net.ess3.api.IItemDb {
 
             if (meta.hasLore()) {
                 sb.append("lore:").append(serializeLines(meta.getLore())).append(" ");
+            }
+
+            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_14_R01)) {
+                if (meta.hasCustomModelData()) {
+                    sb.append("custom-model-data:").append(meta.getCustomModelData()).append(" ");
+                }
             }
 
             if (meta.hasEnchants()) {

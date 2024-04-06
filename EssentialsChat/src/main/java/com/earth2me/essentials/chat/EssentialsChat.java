@@ -2,9 +2,9 @@ package com.earth2me.essentials.chat;
 
 import com.earth2me.essentials.Essentials;
 import com.earth2me.essentials.EssentialsLogger;
-import com.earth2me.essentials.chat.processing.LegacyChatHandler;
-import com.earth2me.essentials.chat.processing.SignedChatHandler;
+import com.earth2me.essentials.chat.processing.ChatHandler;
 import com.earth2me.essentials.metrics.MetricsWrapper;
+import com.earth2me.essentials.utils.AdventureUtil;
 import net.ess3.api.IEssentials;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Level;
 
-import static com.earth2me.essentials.I18n.tl;
+import static com.earth2me.essentials.I18n.tlLiteral;
 
 public class EssentialsChat extends JavaPlugin {
     private transient IEssentials ess;
@@ -25,20 +25,15 @@ public class EssentialsChat extends JavaPlugin {
         final PluginManager pluginManager = getServer().getPluginManager();
         ess = (IEssentials) pluginManager.getPlugin("Essentials");
         if (!this.getDescription().getVersion().equals(ess.getDescription().getVersion())) {
-            getLogger().log(Level.WARNING, tl("versionMismatchAll"));
+            getLogger().log(Level.WARNING, AdventureUtil.miniToLegacy(tlLiteral("versionMismatchAll")));
         }
         if (!ess.isEnabled()) {
             this.setEnabled(false);
             return;
         }
 
-        final SignedChatHandler signedHandler = new SignedChatHandler((Essentials) ess, this);
-        if (signedHandler.tryRegisterListeners()) {
-            getLogger().info("Secure signed chat and previews are enabled.");
-        } else {
-            final LegacyChatHandler legacyHandler = new LegacyChatHandler((Essentials) ess, this);
-            legacyHandler.registerListeners();
-        }
+        final ChatHandler legacyHandler = new ChatHandler((Essentials) ess, this);
+        legacyHandler.registerListeners();
 
         if (metrics == null) {
             metrics = new MetricsWrapper(this, 3814, false);
