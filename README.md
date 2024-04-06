@@ -1,6 +1,9 @@
 # MultiPaper/Essentials
 
-Syncs /tpa /tpahere /tpaccept /tpdeny /tpacancel.
+ - Syncs /tpa /tpahere /tpaccept /tpdeny /tpacancel.
+ - Only kicks local afk players
+ - Syncs /broadcast
+ - Syncs /home, /back, /seen
 
 ## Building
 
