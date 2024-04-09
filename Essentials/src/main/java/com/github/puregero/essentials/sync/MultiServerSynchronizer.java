@@ -51,6 +51,7 @@ public class MultiServerSynchronizer<T> {
         User.homeLocationSynchronizer = new HomeLocationSynchronizer(plugin);
         User.replyRecipientSynchronizer = new ReplyRecipientSynchronizer(plugin);
         User.sendComponentSynchronizer = new SendComponentSynchronizer(plugin);
+        User.moneySynchronizer = new MoneySynchronizer(plugin);
     }
 
     public MultiServerSynchronizer(Plugin plugin, String channel) {

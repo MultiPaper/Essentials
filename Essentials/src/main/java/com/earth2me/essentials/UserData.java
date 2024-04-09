@@ -117,6 +117,8 @@ public abstract class UserData extends PlayerExtension implements IConf {
     }
 
     public void setMoney(final BigDecimal value, final boolean throwError) throws MaxMoneyException {
+        final BigDecimal previousMoney = money;
+
         final BigDecimal maxMoney = ess.getSettings().getMaxMoney();
         final BigDecimal minMoney = ess.getSettings().getMinMoney();
         if (value.compareTo(maxMoney) > 0) {
@@ -132,6 +134,13 @@ public abstract class UserData extends PlayerExtension implements IConf {
         }
         holder.money(money);
         stopTransaction();
+
+        User.moneySynchronizer.notify((User) this, money.subtract(previousMoney));
+    }
+
+    public void _addMoneyRaw(BigDecimal difference) {
+        money = money.add(difference);
+        holder.money(money);
     }
 
     private String getHomeName(String search) {
