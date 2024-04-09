@@ -68,6 +68,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     public static LoginTimeSynchronizer loginTimeSynchronizer;
     public static HomeLocationSynchronizer homeLocationSynchronizer;
     public static ReplyRecipientSynchronizer replyRecipientSynchronizer;
+    public static SendComponentSynchronizer sendComponentSynchronizer;
 
     // User modules
     private final IMessageRecipient messageRecipient;
@@ -1080,7 +1081,11 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
     @Override
     public void sendComponent(ComponentLike component) {
-        ess.getBukkitAudience().player(base).sendMessage(component);
+        if (MultiLib.isExternalPlayer(base)) {
+            sendComponentSynchronizer.notify(this, component);
+        } else {
+            ess.getBukkitAudience().player(base).sendMessage(component);
+        }
     }
 
     @Override

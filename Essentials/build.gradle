@@ -15,8 +15,10 @@ dependencies {
     implementation 'nu.studer:java-ordered-properties:1.0.4'
 
     implementation 'net.kyori:adventure-api:4.15.0'
-    implementation 'net.kyori:adventure-text-minimessage:4.15.0'
+    implementation 'net.kyori:adventure-text-minimessage:4.14.0'
     implementation 'net.kyori:adventure-platform-bukkit:4.3.2'
+    implementation 'net.kyori:adventure-text-serializer-gson:4.14.0'
+    implementation 'net.kyori:adventure-text-serializer-json:4.14.0'
 
     // Providers
     api project(':providers:BaseProviders')
@@ -31,7 +33,7 @@ dependencies {
         exclude group: "org.bukkit", module: "bukkit"
     }
 
-    implementation 'com.github.puregero:multilib:1.1.2-SNAPSHOT'
+    implementation 'com.github.puregero:multilib:1.1.13'
 }
 
 test {
@@ -81,6 +83,8 @@ shadowJar {
     relocate 'com.github.puregero.multilib', 'com.earth2me.essentials.libs.multilib'
     relocate 'net.kyori', 'com.earth2me.essentials.libs.kyori'
     relocate 'net.essentialsx.temp.adventure', 'net.kyori.adventure'
+
+    mergeServiceFiles()
 
     minimize {
         include(dependency('org.checkerframework:checker-qual'))

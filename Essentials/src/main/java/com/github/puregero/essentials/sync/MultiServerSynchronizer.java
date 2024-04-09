@@ -4,6 +4,7 @@ import com.earth2me.essentials.Essentials;
 import com.earth2me.essentials.User;
 import com.github.puregero.multilib.MultiLib;
 import org.bukkit.Chunk;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import java.io.ByteArrayInputStream;
@@ -49,6 +50,7 @@ public class MultiServerSynchronizer<T> {
         User.loginTimeSynchronizer = new LoginTimeSynchronizer(plugin);
         User.homeLocationSynchronizer = new HomeLocationSynchronizer(plugin);
         User.replyRecipientSynchronizer = new ReplyRecipientSynchronizer(plugin);
+        User.sendComponentSynchronizer = new SendComponentSynchronizer(plugin);
     }
 
     public MultiServerSynchronizer(Plugin plugin, String channel) {
@@ -74,6 +76,10 @@ public class MultiServerSynchronizer<T> {
 
     public void notify(Chunk chunk, T object) {
         MultiLib.notify(chunk, channel, serialize(object));
+    }
+
+    public void notifyOwningServer(Player player, T object) {
+        MultiLib.notifyOwningServer(player, channel, serialize(object));
     }
 
 }
