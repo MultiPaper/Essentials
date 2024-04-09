@@ -4,6 +4,7 @@
  - Only kicks local afk players
  - Syncs /broadcast
  - Syncs /home, /back, /seen
+ - Syncs /r recipient
 
 ## Building
 

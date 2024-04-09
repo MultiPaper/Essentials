@@ -210,6 +210,9 @@ public class SimpleMessageRecipient implements IMessageRecipient {
      */
     @Override
     public void setReplyRecipient(final IMessageRecipient replyRecipient) {
+        if (this.parent instanceof User && replyRecipient instanceof User) {
+            User.replyRecipientSynchronizer.notify((User) this.parent, (User) replyRecipient);
+        }
         this.replyRecipient = new WeakReference<>(replyRecipient);
     }
 

@@ -67,6 +67,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     public static LogoutTimeSynchronizer logoutTimeSynchronizer;
     public static LoginTimeSynchronizer loginTimeSynchronizer;
     public static HomeLocationSynchronizer homeLocationSynchronizer;
+    public static ReplyRecipientSynchronizer replyRecipientSynchronizer;
 
     // User modules
     private final IMessageRecipient messageRecipient;

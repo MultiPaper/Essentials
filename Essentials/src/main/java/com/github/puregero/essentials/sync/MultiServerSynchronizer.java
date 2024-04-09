@@ -48,6 +48,7 @@ public class MultiServerSynchronizer<T> {
         User.logoutTimeSynchronizer = new LogoutTimeSynchronizer(plugin);
         User.loginTimeSynchronizer = new LoginTimeSynchronizer(plugin);
         User.homeLocationSynchronizer = new HomeLocationSynchronizer(plugin);
+        User.replyRecipientSynchronizer = new ReplyRecipientSynchronizer(plugin);
     }
 
     public MultiServerSynchronizer(Plugin plugin, String channel) {
