@@ -1082,7 +1082,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
     @Override
     public void sendComponent(ComponentLike component) {
-        if (MultiLib.isExternalPlayer(base)) {
+        if (!(base instanceof OfflinePlayerStub) && MultiLib.isExternalPlayer(base)) {
             sendComponentSynchronizer.notify(this, component);
         } else {
             ess.getBukkitAudience().player(base).sendMessage(component);
