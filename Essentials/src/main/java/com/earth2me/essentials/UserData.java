@@ -232,6 +232,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
 
     public void setNickname(final String nick) {
         holder.nickname(nick);
+        User.nicknameSynchronizer.notify((User) this, nick);
         config.save();
     }
 

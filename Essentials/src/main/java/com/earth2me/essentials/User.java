@@ -70,6 +70,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     public static ReplyRecipientSynchronizer replyRecipientSynchronizer;
     public static SendComponentSynchronizer sendComponentSynchronizer;
     public static MoneySynchronizer moneySynchronizer;
+    public static NicknameSynchronizer nicknameSynchronizer;
 
     // User modules
     private final IMessageRecipient messageRecipient;

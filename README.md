@@ -6,6 +6,7 @@
  - Syncs /home, /back, /seen
  - Syncs /r recipient, /msg
  - Syncs /pay, /eco
+ - Syncs /nick
 
 ## Building
 
