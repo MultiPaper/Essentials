@@ -71,6 +71,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     public static SendComponentSynchronizer sendComponentSynchronizer;
     public static MoneySynchronizer moneySynchronizer;
     public static NicknameSynchronizer nicknameSynchronizer;
+    public static VanishSynchronizer vanishSynchronizer;
 
     // User modules
     private final IMessageRecipient messageRecipient;
@@ -1034,6 +1035,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
                 getBase().setSleepingIgnored(false);
             }
         }
+        vanishSynchronizer.notify(this, vanished);
     }
 
     public boolean checkSignThrottle() {

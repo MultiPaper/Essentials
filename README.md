@@ -7,6 +7,7 @@
  - Syncs /r recipient, /msg
  - Syncs /pay, /eco
  - Syncs /nick
+ - Syncs /vanish
 
 ## Building
 
