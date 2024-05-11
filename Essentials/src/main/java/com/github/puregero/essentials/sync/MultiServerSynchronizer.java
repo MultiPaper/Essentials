@@ -54,6 +54,7 @@ public class MultiServerSynchronizer<T> {
         User.moneySynchronizer = new MoneySynchronizer(plugin);
         User.nicknameSynchronizer = new NicknameSynchronizer(plugin);
         User.vanishSynchronizer = new VanishSynchronizer(plugin);
+        User.ignoreSynchronizer = new IgnoreSynchronizer(plugin);
     }
 
     public MultiServerSynchronizer(Plugin plugin, String channel) {

@@ -8,6 +8,7 @@
  - Syncs /pay, /eco
  - Syncs /nick
  - Syncs /vanish
+ - Syncs /ignore
 
 ## Building
 

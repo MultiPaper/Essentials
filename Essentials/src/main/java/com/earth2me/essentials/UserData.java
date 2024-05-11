@@ -457,6 +457,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
             holder.ignore().remove(uuid);
         }
         config.save();
+        User.ignoreSynchronizer.notify((User) this, (User) user, set);
     }
 
     public boolean isGodModeEnabled() {
