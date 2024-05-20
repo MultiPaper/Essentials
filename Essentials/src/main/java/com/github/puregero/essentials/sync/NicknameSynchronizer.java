@@ -9,7 +9,7 @@ import java.util.UUID;
 public class NicknameSynchronizer extends MultiServerSynchronizer<NicknameSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public NicknameSynchronizer(Essentials essentials) {
         super(essentials, "essentials:nickname");
@@ -20,15 +20,15 @@ public class NicknameSynchronizer extends MultiServerSynchronizer<NicknameSynchr
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            user.setNickname(notification.getNickname());
-            user.setDisplayNick();
-            handling = false;
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user.setNickname(notification.getNickname());
+                user.setDisplayNick();
+            }
         }
     }
 
     public void notify(User user, String nickname) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, nickname));
         }
     }

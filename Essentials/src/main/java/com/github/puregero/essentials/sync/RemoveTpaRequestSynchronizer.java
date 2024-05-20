@@ -9,7 +9,7 @@ import java.util.UUID;
 public class RemoveTpaRequestSynchronizer extends MultiServerSynchronizer<RemoveTpaRequestSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public RemoveTpaRequestSynchronizer(Essentials essentials) {
         super(essentials, "essentials:remove_tpa_request");
@@ -21,13 +21,13 @@ public class RemoveTpaRequestSynchronizer extends MultiServerSynchronizer<Remove
         User user = essentials.getUser(notification.getUuid());
         String username = notification.getUsername();
 
-        handling = true;
-        user.removeTpaRequest(username);
-        handling = false;
+        try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+            user.removeTpaRequest(username);
+        }
     }
 
     public void notify(User user, String username) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, username));
         }
     }

@@ -9,7 +9,7 @@ import java.util.UUID;
 public class LoginTimeSynchronizer extends MultiServerSynchronizer<LoginTimeSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public LoginTimeSynchronizer(Essentials essentials) {
         super(essentials, "essentials:login_time");
@@ -20,14 +20,14 @@ public class LoginTimeSynchronizer extends MultiServerSynchronizer<LoginTimeSync
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            user.setLastLogin(notification.getTime());
-            handling = false;
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user.setLastLogin(notification.getTime());
+            }
         }
     }
 
     public void notify(User user, long time) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, time));
         }
     }

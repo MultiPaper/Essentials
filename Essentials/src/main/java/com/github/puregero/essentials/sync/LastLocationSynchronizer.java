@@ -10,7 +10,7 @@ import java.util.UUID;
 public class LastLocationSynchronizer extends MultiServerSynchronizer<LastLocationSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public LastLocationSynchronizer(Essentials essentials) {
         super(essentials, "essentials:last_location");
@@ -21,14 +21,14 @@ public class LastLocationSynchronizer extends MultiServerSynchronizer<LastLocati
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            user.setLastLocation(notification.getLocation().location());
-            handling = false;
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user.setLastLocation(notification.getLocation().location());
+            }
         }
     }
 
     public void notify(User user, LazyLocation location) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, location));
         }
     }

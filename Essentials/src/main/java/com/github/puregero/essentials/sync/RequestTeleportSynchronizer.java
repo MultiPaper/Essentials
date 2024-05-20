@@ -9,7 +9,7 @@ import java.util.UUID;
 public class RequestTeleportSynchronizer extends MultiServerSynchronizer<RequestTeleportSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public RequestTeleportSynchronizer(Essentials essentials) {
         super(essentials, "essentials:request_teleport");
@@ -22,13 +22,13 @@ public class RequestTeleportSynchronizer extends MultiServerSynchronizer<Request
         User user2 = essentials.getUser(notification.getUuid2());
         boolean here = notification.isHere();
 
-        handling = true;
-        user1.requestTeleport(user2, here);
-        handling = false;
+        try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+            user1.requestTeleport(user2, here);
+        }
     }
 
     public void notify(User user1, User user2, boolean here) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user1, user2, here));
         }
     }

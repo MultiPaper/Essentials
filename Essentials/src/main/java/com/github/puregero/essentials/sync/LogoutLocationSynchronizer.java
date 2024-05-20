@@ -10,7 +10,7 @@ import java.util.UUID;
 public class LogoutLocationSynchronizer extends MultiServerSynchronizer<LogoutLocationSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public LogoutLocationSynchronizer(Essentials essentials) {
         super(essentials, "essentials:logout_location");
@@ -21,14 +21,14 @@ public class LogoutLocationSynchronizer extends MultiServerSynchronizer<LogoutLo
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            user.setLogoutLocation(notification.getLocation().location());
-            handling = false;
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user.setLogoutLocation(notification.getLocation().location());
+            }
         }
     }
 
     public void notify(User user, LazyLocation location) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, location));
         }
     }

@@ -11,7 +11,7 @@ import java.util.UUID;
 public class HomeLocationSynchronizer extends MultiServerSynchronizer<HomeLocationSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public HomeLocationSynchronizer(Essentials essentials) {
         super(essentials, "essentials:home_location");
@@ -22,22 +22,22 @@ public class HomeLocationSynchronizer extends MultiServerSynchronizer<HomeLocati
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            if (notification.getLocation() == null) {
-                try {
-                    user.delHome(notification.getName());
-                } catch (Exception e) {
-                    e.printStackTrace();
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                if (notification.getLocation() == null) {
+                    try {
+                        user.delHome(notification.getName());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    user.setHome(notification.getName(), notification.getLocation().location());
                 }
-            } else {
-                user.setHome(notification.getName(), notification.getLocation().location());
             }
-            handling = false;
         }
     }
 
     public void notify(User user, String name, @Nullable LazyLocation location) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, name, location));
         }
     }

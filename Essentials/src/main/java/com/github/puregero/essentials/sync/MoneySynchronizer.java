@@ -15,7 +15,7 @@ import java.util.UUID;
 public class MoneySynchronizer extends MultiServerSynchronizer<MoneySynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public MoneySynchronizer(Essentials essentials) {
         super(essentials, "essentials:money");
@@ -26,14 +26,14 @@ public class MoneySynchronizer extends MultiServerSynchronizer<MoneySynchronizer
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            user._addMoneyRaw(notification.difference());
-            handling = false;
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user._addMoneyRaw(notification.difference());
+            }
         }
     }
 
     public void notify(User user, BigDecimal difference) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, difference));
         }
     }

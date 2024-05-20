@@ -14,7 +14,7 @@ import java.util.UUID;
 public class SendComponentSynchronizer extends MultiServerSynchronizer<SendComponentSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public SendComponentSynchronizer(Essentials essentials) {
         super(essentials, "essentials:send_component");
@@ -25,14 +25,14 @@ public class SendComponentSynchronizer extends MultiServerSynchronizer<SendCompo
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            user.sendComponent(notification.getComponent());
-            handling = false;
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user.sendComponent(notification.getComponent());
+            }
         }
     }
 
     public void notify(User user, ComponentLike componentLike) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             Player player = Bukkit.getPlayer(user.getUUID());
             if (player != null) {
                 super.notifyOwningServer(player, new Notification(user, componentLike));

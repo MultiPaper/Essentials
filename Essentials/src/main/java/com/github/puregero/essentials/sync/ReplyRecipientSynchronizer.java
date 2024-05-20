@@ -9,7 +9,7 @@ import java.util.UUID;
 public class ReplyRecipientSynchronizer extends MultiServerSynchronizer<ReplyRecipientSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public ReplyRecipientSynchronizer(Essentials essentials) {
         super(essentials, "essentials:reply_recipient");
@@ -21,14 +21,14 @@ public class ReplyRecipientSynchronizer extends MultiServerSynchronizer<ReplyRec
         User user = essentials.getUser(notification.getUuid());
         User replyRecipient = essentials.getUser(notification.getReplyRecipient());
         if (user != null && replyRecipient != null) {
-            handling = true;
-            user.setReplyRecipient(replyRecipient);
-            handling = false;
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user.setReplyRecipient(replyRecipient);
+            }
         }
     }
 
     public void notify(User user, User replyRecipient) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, replyRecipient));
         }
     }

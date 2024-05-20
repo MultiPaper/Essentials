@@ -9,7 +9,7 @@ import java.util.UUID;
 public class VanishSynchronizer extends MultiServerSynchronizer<VanishSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public VanishSynchronizer(Essentials essentials) {
         super(essentials, "essentials:vanish");
@@ -20,16 +20,16 @@ public class VanishSynchronizer extends MultiServerSynchronizer<VanishSynchroniz
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            if (user.isVanished() != notification.getVanished()) {
-                user.setVanished(notification.getVanished());
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                if (user.isVanished() != notification.getVanished()) {
+                    user.setVanished(notification.getVanished());
+                }
             }
-            handling = false;
         }
     }
 
     public void notify(User user, boolean vanished) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, vanished));
         }
     }

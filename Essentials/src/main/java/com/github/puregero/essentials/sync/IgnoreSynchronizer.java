@@ -9,7 +9,7 @@ import java.util.UUID;
 public class IgnoreSynchronizer extends MultiServerSynchronizer<IgnoreSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public IgnoreSynchronizer(Essentials essentials) {
         super(essentials, "essentials:ignore");
@@ -19,16 +19,16 @@ public class IgnoreSynchronizer extends MultiServerSynchronizer<IgnoreSynchroniz
 
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
-        User ignored = essentials.getUser(notification.getIgnored());
-        if (user != null && ignored != null) {
-            handling = true;
-            user.setIgnoredPlayer(ignored, notification.isIgnoring());
-            handling = false;
+        User ignoredUser = essentials.getUser(notification.getIgnored());
+        if (user != null && ignoredUser != null) {
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user.setIgnoredPlayer(ignoredUser, notification.isIgnoring());
+            }
         }
     }
 
     public void notify(User user, User ignored, boolean ignoring) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, ignored, ignoring));
         }
     }

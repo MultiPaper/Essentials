@@ -9,7 +9,7 @@ import java.util.UUID;
 public class KitTimestampSynchronizer extends MultiServerSynchronizer<KitTimestampSynchronizer.Notification> {
 
     private final Essentials essentials;
-    private boolean handling;
+    private final RecursiveLock recursiveLock = new RecursiveLock();
 
     public KitTimestampSynchronizer(Essentials essentials) {
         super(essentials, "essentials:kit_timestamp");
@@ -20,14 +20,14 @@ public class KitTimestampSynchronizer extends MultiServerSynchronizer<KitTimesta
     private void handle(Notification notification) {
         User user = essentials.getUser(notification.getUuid());
         if (user != null) {
-            handling = true;
-            user.setKitTimestamp(notification.getName(), notification.getTime());
-            handling = false;
+            try (RecursiveLock.AutoUnlock ignored = recursiveLock.lock()) {
+                user.setKitTimestamp(notification.getName(), notification.getTime());
+            }
         }
     }
 
     public void notify(User user, String name, long time) {
-        if (!handling) {
+        if (!recursiveLock.isLocked()) {
             super.notify(new Notification(user, name, time));
         }
     }
