@@ -9,6 +9,7 @@
  - Syncs /nick
  - Syncs /vanish
  - Syncs /ignore
+ - Syncs the delay for /kit
 
 ## Building
 

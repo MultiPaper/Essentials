@@ -640,6 +640,7 @@ public abstract class UserData extends PlayerExtension implements IConf {
     public void setKitTimestamp(String name, final long time) {
         name = name.replace('.', '_').replace('/', '_').toLowerCase(Locale.ENGLISH);
         holder.timestamps().kits().put(name, time);
+        User.kitDelaySynchronizer.notify((User) this, name, time);
         config.save();
     }
 

@@ -55,6 +55,7 @@ public class MultiServerSynchronizer<T> {
         User.nicknameSynchronizer = new NicknameSynchronizer(plugin);
         User.vanishSynchronizer = new VanishSynchronizer(plugin);
         User.ignoreSynchronizer = new IgnoreSynchronizer(plugin);
+        User.kitDelaySynchronizer = new KitTimestampSynchronizer(plugin);
     }
 
     public MultiServerSynchronizer(Plugin plugin, String channel) {

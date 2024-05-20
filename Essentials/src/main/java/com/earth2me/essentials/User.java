@@ -73,6 +73,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
     public static NicknameSynchronizer nicknameSynchronizer;
     public static VanishSynchronizer vanishSynchronizer;
     public static IgnoreSynchronizer ignoreSynchronizer;
+    public static KitTimestampSynchronizer kitDelaySynchronizer;
 
     // User modules
     private final IMessageRecipient messageRecipient;
